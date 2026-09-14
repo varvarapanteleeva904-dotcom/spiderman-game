@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Spider-Man: Спасение города</title>
+<style>
+*{box-sizing:border-box} body{margin:0;background:#080b18;color:white;font-family:Arial,sans-serif;overflow:hidden}
+#game{width:100vw;height:100vh;position:relative;overflow:hidden;background:linear-gradient(#070b20 0%,#142a5c 52%,#07101e 100%)}
+#game:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 75% 18%,#ffffff33 0 2px,transparent 3px),radial-gradient(circle at 20% 25%,#ffffff22 0 1px,transparent 2px),radial-gradient(circle at 50% 12%,#ffffff22 0 1px,transparent 2px);background-size:180px 130px,140px 100px,220px 170px;pointer-events:none}
+.moon{position:absolute;right:9%;top:12%;width:75px;height:75px;border-radius:50%;background:#fff4c2;box-shadow:0 0 35px #fff4c277}
+.cloud{position:absolute;width:170px;height:30px;background:#ffffff0d;border-radius:50%;filter:blur(3px);animation:cloud 18s linear infinite}
+.c1{top:25%;left:-180px}.c2{top:38%;left:-300px;animation-delay:8s}
+@keyframes cloud{to{left:110%}}
+#hud{position:absolute;top:15px;left:15px;right:15px;display:flex;justify-content:space-between;z-index:5;font-weight:bold;font-size:18px;text-shadow:0 2px 3px #000}
+#hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:5;background:#0009;padding:8px 14px;border-radius:12px;font-size:14px}
+#mobile{position:absolute;bottom:22px;left:15px;right:15px;display:flex;justify-content:space-between;z-index:7;pointer-events:none}
+.pad{display:flex;gap:10px;pointer-events:auto}
+.ctrl{width:62px;height:62px;border-radius:50%;border:2px solid #ffffff99;background:#111a;color:white;font-size:27px;font-weight:bold;touch-action:none;-webkit-user-select:none;user-select:none}
+.ctrl:active{background:#ffffff44;transform:scale(.95)}
+.actions{display:flex;gap:10px} 
+@media (min-width:800px){#mobile{display:none}}
+@media (max-width:600px){#hint{bottom:94px;font-size:12px;white-space:nowrap}.overlay h1{font-size:31px}.overlay p{padding:0 24px;font-size:14px}.ctrl{width:56px;height:56px;font-size:24px}}
+#city{position:absolute;inset:0;display:flex;align-items:flex-end;gap:10px;padding:0 2vw}
+.building{position:relative;background:linear-gradient(90deg,#0b1020,#18213a,#0b1020);border:2px solid #273152;flex:1;min-width:65px;box-shadow:inset 0 0 25px #0008}
+.win{height:48%}.tall{height:70%}.short{height:34%}.mid{height:58%}
+.window{width:10px;height:14px;background:#f6d66b;position:absolute;opacity:.75}
+#hero{position:absolute;z-index:4;width:58px;height:78px;left:12%;bottom:30%;transition:left .08s, bottom .08s;filter:drop-shadow(0 7px 5px #0008)}
+#hero:after{content:"";position:absolute;width:90px;height:90px;left:-15px;top:-5px;border:1px solid #ffffff12;border-radius:50%;opacity:.7}
+.head{width:34px;height:34px;border-radius:50%;background:#c92336;border:3px solid #111;position:absolute;left:12px;top:0}
+.body{width:38px;height:48px;background:#c92336;border:3px solid #111;border-radius:16px 16px 8px 8px;position:absolute;left:10px;top:29px}
+.eye{position:absolute;width:9px;height:16px;background:white;border:2px solid #111;transform:skew(-10deg);top:9px}.e1{left:17px}.e2{left:29px}
+.web{position:absolute;width:150px;height:2px;background:#fff;transform-origin:left center;display:none;z-index:3}
+.enemy,.citizen{position:absolute;z-index:3;width:30px;height:42px;border-radius:15px 15px 5px 5px;border:2px solid #111}
+.enemy{background:#7127a8}.citizen{background:#29a36a}
+.overlay{position:absolute;inset:0;background:#050711eF;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;text-align:center}
+.overlay h1{font-size:44px;margin:10px}.overlay p{max-width:620px;line-height:1.5}
+button{border:0;border-radius:14px;padding:13px 25px;background:#d52c42;color:white;font-size:18px;font-weight:bold;cursor:pointer}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="hud"><div>🕷️ СПАСЕНИЕ ГОРОДА</div><div>❤️ <span id="lives">3</span> &nbsp; ⭐ <span id="score">0</span></div></div>
+  <div class="moon"></div><div class="cloud c1"></div><div class="cloud c2"></div>
+  <div id="city">
+    <div class="building short"></div><div class="building tall"></div><div class="building mid"></div>
+    <div class="building win"></div><div class="building tall"></div><div class="building mid"></div>
+  </div>
+  <div id="hero"><div class="head"><i class="eye e1"></i><i class="eye e2"></i></div><div class="body"></div></div>
+  <div id="hint">← → движение · ↑ прыжок · SPACE паутина</div>
+  <div id="mobile">
+    <div class="pad"><button class="ctrl" id="left">←</button><button class="ctrl" id="right">→</button></div>
+    <div class="actions"><button class="ctrl" id="jump">↑</button><button class="ctrl" id="webbtn">🕸️</button></div>
+  </div>
+  <div id="start" class="overlay"><h1>🕷️ ЧЕЛОВЕК-ПАУК</h1><p>Спаси город: собери жителей и обезвредь противников. Используй клавиши ← → для движения, ↑ для прыжка и SPACE для паутины.</p><button onclick="startGame()">Начать игру</button></div>
+  <div id="end" class="overlay hidden"><h1 id="endTitle"></h1><p id="endText"></p><button onclick="location.reload()">Играть снова</button></div>
+</div>
+<script>
+const game=document.getElementById('game'),hero=document.getElementById('hero');
+let x=12,y=30,v=0,score=0,lives=3,running=false,jumping=false,lastShot=0;
+const enemies=[],citizens=[];
+
+document.querySelectorAll('.building').forEach(b=>{
+  for(let i=0;i<12;i++){const w=document.createElement('span');w.className='window';
+    w.style.left=(12+(i%3)*30)+'%';w.style.bottom=(12+Math.floor(i/3)*20)+'%';b.appendChild(w)}
+});
+function spawn(type, left, bottom){
+  const e=document.createElement('div'); e.className=type; e.style.left=left+'%'; e.style.bottom=bottom+'%';
+  game.appendChild(e); (type==='enemy'?enemies:citizens).push(e);
+}
+function startGame(){
+ document.getElementById('start').classList.add('hidden'); running=true;
+ for(let i=0;i<4;i++) spawn('enemy',30+i*15,30+Math.random()*20);
+ for(let i=0;i<3;i++) spawn('citizen',42+i*16,30+Math.random()*25);
+ requestAnimationFrame(loop);
+}
+function updateHero(){hero.style.left=x+'%';hero.style.bottom=y+'%'}
+function jump(){if(!jumping){jumping=true;v=1.5}}
+function shoot(){
+ const now=Date.now(); if(now-lastShot<500)return; lastShot=now;
+ const web=document.createElement('div');web.className='web';game.appendChild(web);
+ const sx=x+4, sy=y+15; web.style.left=sx+'%';web.style.bottom=sy+'%';web.style.display='block';
+ let w=0; const t=setInterval(()=>{w+=10;web.style.width=w+'px';web.style.transform='rotate(-8deg)';
+  enemies.slice().forEach((e,i)=>{if(Math.abs(parseFloat(e.style.left)-x)<10){
+    e.remove(); const idx=enemies.indexOf(e); if(idx>=0)enemies.splice(idx,1);
+    score+=10;document.getElementById('score').textContent=score;
+  }});
+  if(w>210){clearInterval(t);web.remove()}
+ },25);
+}
+document.addEventListener('keydown',e=>{
+ if(!running)return;
+ if(e.key==='ArrowLeft')x=Math.max(2,x-2);
+ if(e.key==='ArrowRight')x=Math.min(90,x+2);
+ if(e.key==='ArrowUp')jump();
+ if(e.code==='Space')shoot();
+ updateHero();
+});
+function loop(){
+ if(!running)return;
+ if(jumping){y+=v;v-=.08;if(y<=30){y=30;jumping=false}}
+ updateHero();
+ citizens.forEach((c,i)=>{if(Math.abs(parseFloat(c.style.left)-x)<4){c.remove();citizens.splice(i,1);score+=20;document.getElementById('score').textContent=score}});
+ enemies.forEach(e=>{let ex=parseFloat(e.style.left); if(ex<x) e.style.left=Math.min(x,ex+0.025)+'%'; else if(ex>x)e.style.left=Math.max(x,ex-0.025)+'%';
+ if(Math.abs(parseFloat(e.style.left)-x)<3 && y<38){lives--;document.getElementById('lives').textContent=lives;e.remove();}});
+ if(lives<=0)return finish(false);
+ if(enemies.length===0 && citizens.length===0)return finish(true);
+ requestAnimationFrame(loop);
+}
+function finish(win){
+ running=false;document.getElementById('end').classList.remove('hidden');
+ document.getElementById('endTitle').textContent=win?'🏆 ГОРОД СПАСЁН!':'💥 МИССИЯ ПРОВАЛЕНА';
+ document.getElementById('endText').textContent=win?'Отличная работа! Ты набрал '+score+' очков.':'Жизни закончились. Попробуй ещё раз!';
+}
+</script>
+</body></html>
